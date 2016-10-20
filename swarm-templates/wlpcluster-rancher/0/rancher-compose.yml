@@ -1,0 +1,15 @@
+jenkins:
+  scale: 1
+wlpcluster01:
+  scale: 1
+chefserver:
+  scale: 1
+wlpcluster02:
+  scale: 1
+wlpcluster03:
+  scale: 1
+.catalog:
+  name: wlp_cluster
+  version: 0.0.1
+  description: wlp cluster
+  questions:

@@ -1,0 +1,67 @@
+contrailjenkins:
+  ports:
+  - 18080:8080/tcp
+  hostname: contrailjenkins
+  image: jenkins:latest
+  links:
+  - contrailwlpcluster01:contrailwlpcluster01
+  - contrailchefserver:contrailchefserver
+  volumes:
+  - /home/ibmadmin/rancher/server/jenkins_home:/var/jenkins_home
+contrailwlpcluster01:
+  environment:
+    LICENSE: accept
+    appnamelist: SWIS
+    clustermember1: contrailwlpcluster02
+    clustermember2: contrailwlpcluster03
+    ctrlhostname: contrailwlpcluster01
+    role: master
+  entrypoint: bash -c '/usr/sbin/sshd;su -p wasadmin -c "bash /wlpconfig/controller.sh";sleep 120;su -p wasadmin -c "bash /wlpconfig/failover.sh"; sleep 10;su -p wasadmin -c "bash /wlpconfig/wlpcluster_bootstrap.sh"'
+  hostname: contrailwlpcluster01
+  image: wlpserver_chefclient:centos7
+  links:
+  - contrailwlpcluster02:contrailwlpcluster02
+  - contrailwlpcluster03:contrailwlpcluster03
+  - contrailchefserver:contrailchefserver
+  volumes:
+  - /home/ibmadmin/rancher/server/chefserver/shared_data/etc_client:/etc/chef
+contrailchefserver:
+  ports:
+  - 443:443/tcp
+  entrypoint:
+  - bash
+  - -c
+  - /usr/sbin/sshd & /opt/opscode/embedded/bin/runsvdir-start & /opt/chef-manage/embedded/bin/runsvdir-start
+  hostname: contrailchefserver
+  image: chefserver12_chefmanage_sshd:ubuntu
+  privileged: true
+  volumes:
+  - /home/ibmadmin/rancher/server/chefserver/etc_opscode:/etc/opscode
+  - /home/ibmadmin/rancher/server/chefserver/etc_chef_manage:/etc/chef-manage
+  - /home/ibmadmin/rancher/server/chefserver/var_log_opscode:/var/log/opscode
+  - /home/ibmadmin/rancher/server/chefserver/var_log_chef_manage:/var/log/chef-manage
+  - /home/ibmadmin/rancher/server/chefserver/var_opt_opscode:/var/opt/opscode
+  - /home/ibmadmin/rancher/server/chefserver/var_opt_chef_manage:/var/opt/chef-manage
+  - /home/ibmadmin/rancher/server/chefserver/shared_data:/data
+contrailwlpcluster02:
+  environment:
+    LICENSE: accept
+    appnamelist: SWIS
+    clustermember1: contrailwlpcluster02
+    clustermember2: contrailwlpcluster03
+    ctrlhostname: contrailwlpcluster01
+    role: member
+  entrypoint: bash -c '/usr/sbin/sshd;sleep 20;su -p wasadmin -c "bash /wlpconfig/controller.sh";su -p wasadmin -c "bash /wlpconfig/wlpcluster_bootstrap.sh"'
+  hostname: contrailwlpcluster02
+  image: wlpserver_chefclient:centos7
+contrailwlpcluster03:
+  environment:
+    LICENSE: accept
+    appnamelist: SWIS
+    clustermember1: contrailwlpcluster02
+    clustermember2: contrailwlpcluster03
+    ctrlhostname: contrailwlpcluster01
+    role: member
+  entrypoint: bash -c '/usr/sbin/sshd;sleep 40;su -p wasadmin -c "bash /wlpconfig/controller.sh";su -p wasadmin -c "bash /wlpconfig/wlpcluster_bootstrap.sh"'
+  hostname: contrailwlpcluster03
+  image: wlpserver_chefclient:centos7
